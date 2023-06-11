@@ -120,6 +120,50 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/classes", verifyJWT, verifyAdmin, async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
+
+    //Accept the Class
+    app.patch("/class/accept/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          status: "accepted",
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    //Reject the Class
+    app.patch("/class/reject/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          status: "denied",
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    app.patch("/class/feedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const feedback = req.body;
+
+      const update = {
+        $set: { feedback: feedback },
+      };
+
+      const result = await classesCollection.updateOne(filter, update);
+      res.send(result);
+    });
+
     //instructors api
     app.get("/instructors", async (req, res) => {
       const query = { role: "instructor" };
