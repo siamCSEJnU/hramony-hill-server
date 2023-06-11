@@ -48,6 +48,7 @@ async function run() {
 
     const usersCollection = client.db("harmonyDB").collection("users");
     const classesCollection = client.db("harmonyDB").collection("classes");
+    const selectedCollection = client.db("harmonyDB").collection("selected");
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -120,8 +121,30 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/classes", verifyJWT, verifyAdmin, async (req, res) => {
+    app.get("/allClasses", async (req, res) => {
       const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/allClasses/admin", verifyJWT, verifyAdmin, async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get(
+      "/allClasses/instructor",
+      verifyJWT,
+      verifyInstructor,
+      async (req, res) => {
+        const result = await classesCollection.find().toArray();
+        res.send(result);
+      }
+    );
+
+    //selected classes
+    app.post("/selectClass/", async (req, res) => {
+      const selectedClass = req.body;
+      const result = await selectedCollection.insertOne(selectedClass);
       res.send(result);
     });
 
