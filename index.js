@@ -47,9 +47,56 @@ async function run() {
     await client.connect();
 
     const usersCollection = client.db("harmonyDB").collection("users");
+    const classesCollection = client.db("harmonyDB").collection("classes");
+
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
+
+    //verifyAdmin
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== "admin") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+      next();
+    };
+
+    //verifyInstructor
+    const verifyInstructor = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== "instructor") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+      next();
+    };
+
+    //verifyStudent
+    const verifyStudent = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== "student") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+      next();
+    };
 
     //users api
-
     app.get("/users", verifyJWT, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
@@ -63,6 +110,13 @@ async function run() {
         return res.send({ message: "user already exist" });
       }
       const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
+    //classes api
+    app.post("/class", verifyJWT, verifyInstructor, async (req, res) => {
+      const newClass = req.body;
+      const result = await classesCollection.insertOne(newClass);
       res.send(result);
     });
 
@@ -86,7 +140,7 @@ async function run() {
       }
       const query = { email: email };
       const user = await usersCollection.findOne(query);
-      const result = { admin: user?.role === "instructor" };
+      const result = { instructor: user?.role === "instructor" };
       res.send(result);
     });
 
@@ -98,7 +152,7 @@ async function run() {
       }
       const query = { email: email };
       const user = await usersCollection.findOne(query);
-      const result = { admin: user?.role === "student" };
+      const result = { student: user?.role === "student" };
       res.send(result);
     });
 
@@ -126,14 +180,6 @@ async function run() {
       };
       const result = await usersCollection.updateOne(filter, updatedDoc);
       res.send(result);
-    });
-
-    app.post("/jwt", (req, res) => {
-      const user = req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "1h",
-      });
-      res.send({ token });
     });
 
     // Send a ping to confirm a successful connection
