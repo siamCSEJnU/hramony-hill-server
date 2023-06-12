@@ -142,11 +142,29 @@ async function run() {
     );
 
     //selected classes
-    app.post("/selectClass/", async (req, res) => {
+    app.post("/selectClass", verifyJWT, verifyStudent, async (req, res) => {
       const selectedClass = req.body;
       const result = await selectedCollection.insertOne(selectedClass);
       res.send(result);
     });
+
+    app.get("/selectedClasses", verifyJWT, verifyStudent, async (req, res) => {
+      const result = await selectedCollection.find().toArray();
+      res.send(result);
+    });
+
+    //selectedClass delete
+    app.delete(
+      "/selectedClass/delete/:id",
+      verifyJWT,
+      verifyStudent,
+      async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await selectedCollection.deleteOne(query);
+        res.send(result);
+      }
+    );
 
     //Accept the Class
     app.patch("/class/accept/:id", async (req, res) => {
